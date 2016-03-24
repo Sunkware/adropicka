@@ -51,6 +51,8 @@ or
 python adropicka.py -r /folderOne/testfile.dat
 ```
 
+If file doesn't exist, error will not be raised.
+
 ### Also...
 
 There are few other options, run

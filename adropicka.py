@@ -52,7 +52,7 @@ def main():
     global UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE
 
 
-    print("Adropicka v0.9")
+    print("Adropicka v0.92")
 
 
     op = optparse.OptionParser()
@@ -230,14 +230,29 @@ def main():
 
         print("Removing " + "\"" + basename + "\"...")
 
+        file_not_found = False 
+
         try:
             res = dbx.files_delete(filepath)
         except dropbox.exceptions.ApiError as err:
-            print("API error!")
-            print(err)
-            return -12
+# If file not found, show message but don't interrupt with error (goal of removal is attained already)
+# Other ApiError-s are processed as usual
 
-        print("Removed " + "\"" + basename + "\"" + " (" + str(res.size) + " bytes)")
+# Unwinding error stack...
+            if isinstance(err.error, dropbox.files.DeleteError):
+                if err.error.is_path_lookup():
+                    if err.error.get_path_lookup().is_not_found():
+                        file_not_found = True
+
+            if not file_not_found:
+                print("API error!")
+                print(err)
+                return -12
+
+        if file_not_found:
+            print("File not found, considered to be removed.")
+        else:
+            print("Removed " + "\"" + basename + "\"" + " (" + str(res.size) + " bytes)")
 
 
     return 0
