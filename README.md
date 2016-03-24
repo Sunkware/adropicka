@@ -31,6 +31,8 @@ or
 python adropicka.py -u ./testfile.dat /folderOne
 ```
 
+If the file already exists, it will be re-uploaded.
+
 ### Download file
 
 ```
@@ -40,6 +42,8 @@ or
 ```
 python adropicka.py -d /folderOne/testfile.dat ./innerDir
 ```
+
+If the file already exists, it will be re-downloaded.
 
 ### Remove file
 
