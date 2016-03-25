@@ -233,9 +233,9 @@ def main():
                return -11
 
         if folder_exists:
-            print("Folder already exists.")
+            print("Folder exists already.")
         else:
-            print("Folder created")
+            print("Created folder")
 
 
 # Process upload operation
