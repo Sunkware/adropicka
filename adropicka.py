@@ -52,31 +52,35 @@ def main():
     global UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE
 
 
-    print("Adropicka v0.92")
+    print("Adropicka v0.94")
 
 
     op = optparse.OptionParser()
 
     op.add_option("--authorize-root", action = "store_true", default = False, dest = "authorize_root", help = "Authorize the application for root access")
     op.add_option("--authorize-dir", action = "store_true", default = False, dest = "authorize_dir", help = "Authorize the application for folder access")
+    op.add_option("-l", "--list", action = "store_true", default = False, dest = "enlist", help = "List content of folder")
+    op.add_option("-m", "--makedir", action = "store_true", default = False, dest = "makedir", help = "Create folder")
     op.add_option("-u", "--upload", action = "store_true", default = False, dest = "upload", help = "Upload file")
     op.add_option("-d", "--download", action = "store_true", default = False, dest = "download", help = "Download file")
-    op.add_option("-r", "--remove", action = "store_true", default = False, dest = "remove", help = "Remove file")
+    op.add_option("-r", "--remove", action = "store_true", default = False, dest = "remove", help = "Remove file or folder")
 
     op.add_option("-t", "--tokenpath", action = "store", default = "adropicka_token.txt", dest = "tokenpath", help = "Path to the text file with an access token")
     op.add_option("-c", "--chunksize", action = "store", default = UPLOAD_CHUNK_SIZE, dest = "chunksize", help = "Size of upload chunk in bytes")
-    op.add_option("-m", "--maxsinglesize", action = "store", default = UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE, dest = "maxsinglesize", help = "Max size of file to be uploaded as a single data block")    
+    op.add_option("-s", "--singlemaxsize", action = "store", default = UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE, dest = "singlemaxsize", help = "Max size of file to be uploaded as a single data block")    
 
     opts, args = op.parse_args()
 
 
     authorize_root = opts.authorize_root;
     authorize_dir = opts.authorize_dir;
+    enlist = opts.enlist
+    makedir = opts.makedir
     upload = opts.upload
     download = opts.download
     remove = opts.remove
 
-    actionsnum = int(authorize_root) + int(authorize_dir) + int(upload) + int(download) + int(remove)
+    actionsnum = int(authorize_root) + int(authorize_dir) + int(enlist) + int(makedir) + int(upload) + int(download) + int(remove)
 
     if actionsnum == 0:
         print("No action is specified! Run with --help or -h to get to know the syntax.")
@@ -142,8 +146,8 @@ def main():
     if opts.chunksize > 0:
         UPLOAD_CHUNK_SIZE = opts.chunksize
 
-    if opts.maxsinglesize > 0:
-        UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE = opts.maxsinglesize
+    if opts.singlemaxsize > 0:
+        UPLOAD_MAX_SINGLE_CHUNK_FILE_SIZE = opts.singlemaxsize
 
 
     dbx = dropbox.Dropbox(token)
@@ -154,11 +158,91 @@ def main():
     print("Client initialized.")
 
 
+# Process list operation
+    if enlist:
+        if len(args) != 1:
+            print("Remote dir path must be specified!")
+            return -7
+        
+        dirpath = args[0]
+        if not dirpath.startswith("/"):
+            dirpath = "/" + dirpath
+        if dirpath.endswith("/"):
+            dirpath = dirpath[0:len(dirpath) - 1] # particularly, root path should be represented by empty string
+
+        print("Listing content of " + "\"" + dirpath + "\"...")
+
+        try:
+            folder_res = dbx.files_list_folder(dirpath)
+        except dropbox.exceptions.ApiError as err:
+           print("API error!")
+           print(err)
+           return -8
+
+        entries_num = len(folder_res.entries)
+
+        for i in range(0, entries_num):
+            print(make_folder_entry_string(folder_res.entries[i]))
+
+        while folder_res.has_more:
+            try:
+                folder_res = dbx.files_list_folder_continue(folder_res.cursor)
+            except dropbox.exceptions.ApiError as err:
+                print("API error!")
+                print(err)
+                return -9
+
+            entries_num = len(folder_res.entries)
+
+            for i in range(0, entries_num):
+                print(make_folder_entry_string(folder_res.entries[i]))
+
+
+# Process makedir operation
+    if makedir:
+        if len(args) != 1:
+            print("Remote dir path must be specified!")
+            return -10
+        
+        dirpath = args[0]
+        if not dirpath.startswith("/"):
+            dirpath = "/" + dirpath
+        if dirpath.endswith("/"):
+            dirpath = dirpath[0:len(dirpath) - 1]
+
+        print("Creating " + "\"" + dirpath + "\" folder...")
+
+        folder_exists = False
+
+        try:
+            folder_res = dbx.files_create_folder(dirpath)
+        except dropbox.exceptions.ApiError as err:
+# If the folder exists, don't interrupt with error (goal of making is attained already)
+# Other API error-s are processed as usual
+
+# Unwinding error stack...
+           if isinstance(err.error, dropbox.files.CreateFolderError):
+               if err.error.is_path():
+                   if err.error.get_path().is_conflict():
+                       if err.error.get_path().get_conflict().is_folder():
+                           folder_exists = True
+
+           if not folder_exists:
+               print("API error!")
+               print(err)
+               return -11
+
+        if folder_exists:
+            print("Folder already exists.")
+        else:
+            print("Folder created")
+
+
 # Process upload operation
     if upload:
         if len(args) != 2:
             print("Local file path and remote dir path must be specified!")
-            return -7
+            return -12
 
         srcfilepath = args[0]
         destpath = args[1]
@@ -167,7 +251,9 @@ def main():
         basename = os.path.basename(srcfilepath)
 
         destfilepath = destpath;
-        if not destpath.endswith("/"):
+        if not destfilepath.startswith("/"):
+            destfilepath = "/" + destfilepath
+        if not destfilepath.endswith("/"):
             destfilepath += "/"
 
         destfilepath += basename
@@ -177,7 +263,7 @@ def main():
         ub = upload_to_file(dbx, destfilepath, srcfilepath) # breaking file content into chunks if needed
         if ub < 0:
             print("Upload error!")
-            return -8
+            return -13
 
         print("Uploaded " + "\"" + basename + "\"" + " (" + str(ub) + " bytes)")
 
@@ -186,7 +272,7 @@ def main():
     if download:
         if len(args) != 2:
             print("Remote file path and local dir path must be specified!")
-            return -9
+            return -14
 
         srcfilepath = args[0]
         if not srcfilepath.startswith("/"):
@@ -211,7 +297,7 @@ def main():
         except dropbox.exceptions.ApiError as err:
            print("API error!")
            print(err)
-           return -10
+           return -15
 
         print("Downloaded " + "\"" + basename + "\"" + " (" + str(res.size) + " bytes)")
 
@@ -219,8 +305,8 @@ def main():
 # Process remove operation
     if remove:
         if len(args) != 1:
-            print("Remote file path must be specified!")
-            return -11
+            print("Remote file (or folder) path must be specified!")
+            return -16
 
         filepath = args[0]
         if not filepath.startswith("/"):
@@ -230,7 +316,7 @@ def main():
 
         print("Removing " + "\"" + basename + "\"...")
 
-        file_not_found = False 
+        obj_not_found = False 
 
         try:
             res = dbx.files_delete(filepath)
@@ -242,18 +328,20 @@ def main():
             if isinstance(err.error, dropbox.files.DeleteError):
                 if err.error.is_path_lookup():
                     if err.error.get_path_lookup().is_not_found():
-                        file_not_found = True
+                        obj_not_found = True
 
-            if not file_not_found:
+            if not obj_not_found:
                 print("API error!")
                 print(err)
-                return -12
+                return -17
 
-        if file_not_found:
-            print("File not found, considered to be removed.")
+        if obj_not_found:
+            print("File or folder not found, considered to be removed.")
         else:
-            print("Removed " + "\"" + basename + "\"" + " (" + str(res.size) + " bytes)")
-
+            if hasattr(res, "size"):
+                print("Removed " + "\"" + basename + "\"" + " (" + str(res.size) + " bytes)")
+            else:
+                print("Removed " + "[" + basename + "]" + " folder")
 
     return 0
 
@@ -352,6 +440,21 @@ def filesize(f):
         return size        
     
     return -1
+
+
+def make_folder_entry_string(en):
+    res = ""
+
+    if en is not None:
+        if isinstance(en, dropbox.files.FileMetadata):
+            res = "\"" + en.name + "\"" + " (" + str(en.size) + " B)"
+        elif isinstance(en, dropbox.files.FolderMetadata):
+            res = "[" + en.name + "]"
+        else:
+            res = "???"
+
+    return res
+
 
 
 if __name__ == "__main__":

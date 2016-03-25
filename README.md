@@ -16,10 +16,34 @@ python adropicka.py --authorize-root
 
 to authorize the application within DropBox (in development status now, 100 users limit).
 
-Run, copy URL from the console, follow this URL in the browser and allow the application to have an access to your DropBox account (its own dir or the whole tree).
+Run, copy URL from the console, follow this URL in the browser and allow the application to have an access to your DropBox account (its own folder or the whole tree).
 Then copy authentication code from the web page and enter it at the application's prompt.
 The token file, "adropicka_token.txt", should appear.
 You have to perform the authorization only once.
+
+### List folder content
+
+```
+python adropicka.py --list /folderOne/yetAnotherFolder
+```
+or
+```
+python adropicka.py -l /folderOne/yetAnotherFolder
+```
+
+Nested folders are not traversed.
+
+### Make folder
+
+```
+python adropicka.py --makedir /nested/nextInside
+```
+or
+```
+python adropicka.py -m /nested/nextInside
+```
+
+If the folder exists already, error will not be raised.
 
 ### Upload file
 
@@ -31,7 +55,7 @@ or
 python adropicka.py -u ./testfile.dat /folderOne
 ```
 
-If the file already exists, it will be re-uploaded.
+If the file exists already, it will be re-uploaded.
 
 ### Download file
 
@@ -43,19 +67,21 @@ or
 python adropicka.py -d /folderOne/testfile.dat ./innerDir
 ```
 
-If the file already exists, it will be re-downloaded.
+If the file exists already, it will be re-downloaded.
 
-### Remove file
+### Remove file or folder
 
 ```
 python adropicka.py --remove /folderOne/testfile.dat
+python adropicka.py --remove /folderOne
 ```
 or
 ```
 python adropicka.py -r /folderOne/testfile.dat
+python adropicka.py -r /folderOne
 ```
 
-If file doesn't exist, error will not be raised.
+If file or folder doesn't exist, error will not be raised.
 
 ### Also...
 
@@ -69,7 +95,7 @@ to see them all.
 
 ### TODO
 
-Listing, copying, moving, sharing, ... a lot.
+Copying, moving, sharing, ... a lot.
 
 ### Reverence
 
@@ -78,5 +104,5 @@ which was the example to follow, in syntax and usage.
 
 ### Why so scarce?
 
-The main purpose of this thing is to add a DropBox support to [Naamari project](http://sunkware.org/NAAMARI/index.html).
+The main purpose of this thing was to add a DropBox support to [Naamari project](http://sunkware.org/NAAMARI/index.html).
 The upload/download/remove functionality seems to be sufficient... at the moment.
