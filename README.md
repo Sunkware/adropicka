@@ -14,7 +14,7 @@ or
 python adropicka.py --authorize-root
 ```
 
-to authorize the application within DropBox (in development status now, 100 users limit).
+to authorize the application within DropBox (app has production status, there's no limit of user number).
 
 Run, copy URL from the console, follow this URL in the browser and allow the application to have an access to your DropBox account (its own folder or the whole tree).
 Then copy authentication code from the web page and enter it at the application's prompt.
