@@ -104,5 +104,5 @@ which was the example to follow, in syntax and usage.
 
 ### Why so scarce?
 
-The main purpose of this thing was to add a DropBox support to [Naamari project](http://sunkware.org/naamari/index.php).
+The main purpose of this thing was to add a DropBox support to [Naamari project](https://sunkware.org/naamari/index.php).
 The upload/download/remove functionality seems to be sufficient... at the moment.

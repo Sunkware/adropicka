@@ -2,7 +2,7 @@
 
 #
 #  Adropicka - a very basic one-file-per-run console client-wrapper for DropBox
-#  Copyright (c) 2016 Sunkware
+#  Copyright (c) 2017 Sunkware
 #  Key FP = 6B6D C8E9 3438 6E9C 3D97  56E5 2CE9 A476 99EF 28F6
 #
 #  This program is free software: you can redistribute it and/or modify
